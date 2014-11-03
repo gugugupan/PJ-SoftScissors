@@ -8,5 +8,5 @@ Jue Wang, Maneesh Agrawala, Michael Cohen.
 Usage
 ============
 
-Lisence
+License
 ============
