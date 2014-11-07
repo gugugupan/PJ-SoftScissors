@@ -29,18 +29,21 @@ var Scissor = function( canvas_id ) {
 	/* is each pixel in matte queue */
 	// this.inQueue = null ;
 
-	/* last mouse move point */
-	this.lastX = null ;
-	this.lastY = null ;
-
-	/* size of mouse brush */
-	this.brushWidth = 20 ;
-
 	/* pixel array of boudary point */
 	this.leftBoudary = [] ; // background
 	this.rightBoudary = [] ; // foreground
 	/* max size of boudary array */
 	this.maxBoudaryArrSize = 20 ;
+
+	/* size of mouse brush */
+	this.brushWidth = 15 ;
+
+	/* Theata */
+	this.sqrTheata = 0.1 * 0.1 ;
+
+	/* last mouse move point */
+	this.lastX = null ;
+	this.lastY = null ;
 } ;
 
 Scissor.prototype = {
@@ -65,7 +68,7 @@ Scissor.prototype = {
 
 			// Initialize Array from image width and height
 			// ( y * WIDTH + x ) * 4 + k
-			_self.imageData = _self.ctx.getImageData( 0 , 0 , _self.width , _self.height ).data ;
+			_self.imageData = _self.ctx.getImageData( 0 , 0 , _self.width , _self.height ) ;
 			_self.isMatte = [] ;
 			_self.alpha = [] ;
 			for ( var i = 0 ; i < _self.width * _self.height ; i ++ ) {
@@ -122,7 +125,7 @@ Scissor.prototype = {
 			var deltaX = x - lx , deltaY = y - ly ;
 			var unitDeltaX = deltaX / Math.sqrt( deltaX * deltaX + deltaY * deltaY ) ,
 				unitDeltaY = deltaY / Math.sqrt( deltaX * deltaX + deltaY * deltaY ) ;
-			for ( var xx = lx , yy = ly ; Math.sgn( x - xx ) == Math.sgn( x - lx ) && Math.sgn( y - yy ) == Math.sgn( y - ly ) ; xx += unitDeltaX , yy += unitDeltaY ) {
+			for ( var xx = lx , yy = ly ; Math.sgn( x - xx ) == Math.sgn( x - lx ) && Math.sgn( y - yy ) == Math.sgn( y - ly ) ; xx += unitDeltaX * 2 , yy += unitDeltaY * 2 ) {
 				// // Draw a line 
 				// _self.ctx.fillStyle = "#FF0000" ;
 				// _self.ctx.fillRect( xx , yy , 1 , 1 ) ;
@@ -136,9 +139,9 @@ Scissor.prototype = {
 				if ( leftBasePointY >= _self.height ) leftBasePointY = _self.height - 1 ;
 				color = [] ;
 				offset = 4 * ( leftBasePointY * _self.width + leftBasePointX ) ;
-				color.push( _self.imageData[ offset + 0 ] ) ;
-				color.push( _self.imageData[ offset + 1 ] ) ;
-				color.push( _self.imageData[ offset + 2 ] ) ;
+				color.push( _self.imageData.data[ offset + 0 ] ) ;
+				color.push( _self.imageData.data[ offset + 1 ] ) ;
+				color.push( _self.imageData.data[ offset + 2 ] ) ;
 				_self.leftBoudary.push( color ) ;
 				if ( _self.leftBoudary.length > _self.maxBoudaryArrSize )
 					_self.leftBoudary.shift() ;
@@ -154,9 +157,9 @@ Scissor.prototype = {
 				if ( rightBasePointY >= _self.height ) rightBasePointY = _self.height - 1 ;
 				color = [] ;
 				offset = 4 * ( rightBasePointY * _self.width + rightBasePointX ) ;
-				color.push( _self.imageData[ offset + 0 ] ) ;
-				color.push( _self.imageData[ offset + 1 ] ) ;
-				color.push( _self.imageData[ offset + 2 ] ) ;
+				color.push( _self.imageData.data[ offset + 0 ] ) ;
+				color.push( _self.imageData.data[ offset + 1 ] ) ;
+				color.push( _self.imageData.data[ offset + 2 ] ) ;
 				_self.rightBoudary.push( color ) ;
 				if ( _self.rightBoudary.length > _self.maxBoudaryArrSize )
 					_self.rightBoudary.shift() ;
@@ -181,10 +184,25 @@ Scissor.prototype = {
 					} else {
 						/* estimate alpha  */
 						var pixelColor = [] , offset = 4 * ( i * _self.width + j ) ;
-						pixelColor.push( _self.imageData[ offset + 0 ] ) ;
-						pixelColor.push( _self.imageData[ offset + 1 ] ) ;
-						pixelColor.push( _self.imageData[ offset + 2 ] ) ;
-						var bestRatio = NaN , bestAlpha = NaN ;
+						pixelColor.push( _self.imageData.data[ offset + 0 ] ) ;
+						pixelColor.push( _self.imageData.data[ offset + 1 ] ) ;
+						pixelColor.push( _self.imageData.data[ offset + 2 ] ) ;
+
+						// min fully foreground or background value
+						var sqrDFi = NaN , sqrDBi = NaN ;
+						for ( var ri = 0 ; ri < _self.rightBoudary.length ; ri ++ ) {
+							var cici = Math.vectorSqrLength( Math.vectorSub( _self.rightBoudary[ ri ] , pixelColor ) ) ;
+							if ( isNaN( sqrDFi ) || cici < sqrDFi )
+								sqrDFi = cici ;
+						}
+						for ( var li = 0 ; li < _self.leftBoudary.length ; li ++ ) {
+							var cici = Math.vectorSqrLength( Math.vectorSub( _self.leftBoudary[ li ] , pixelColor ) ) ;
+							if ( isNaN( sqrDBi ) || cici < sqrDBi )
+								sqrDBi = cici ;
+						}
+
+						// estimate alpha using confidence value
+						var bestConf = NaN , bestAlpha = NaN ;
 						for ( var li = 0 ; li < _self.leftBoudary.length ; li ++ )
 							for ( var ri = 0 ; ri < _self.rightBoudary.length ; ri ++ ) {
 								// xxxColor is [ r , g , b ] array
@@ -192,20 +210,21 @@ Scissor.prototype = {
 								var deltaFB = Math.vectorSub( foreColor , backColor ) ,
 									deltaFBLength = Math.vectorLength( deltaFB ) ;
 								var estimateAlpha = Math.vectorDotProduct( Math.vectorSub( pixelColor , backColor ) , deltaFB ) / ( deltaFBLength * deltaFBLength ) ;
-								if ( estimateAlpha < 0 ) estimateAlpha = 0 ;
-								if ( estimateAlpha > 1 ) estimateAlpha = 1 ;
+								// if ( estimateAlpha < 0 ) estimateAlpha = 0 ;
+								// if ( estimateAlpha > 1 ) estimateAlpha = 1 ;
 								var divisor = [] ;
 								divisor.push( pixelColor[ 0 ] - ( estimateAlpha * foreColor[ 0 ] + ( 1 - estimateAlpha ) * backColor[ 0 ] ) ) ;
 								divisor.push( pixelColor[ 1 ] - ( estimateAlpha * foreColor[ 1 ] + ( 1 - estimateAlpha ) * backColor[ 1 ] ) ) ;
 								divisor.push( pixelColor[ 2 ] - ( estimateAlpha * foreColor[ 2 ] + ( 1 - estimateAlpha ) * backColor[ 2 ] ) ) ;
 								var ratio = Math.vectorLength( divisor ) / deltaFBLength ;
-
-								if ( isNaN( bestRatio ) || ratio < bestRatio ) {
-									bestRatio = ratio ;
+								var wFi = Math.exp( - Math.vectorSqrLength( Math.vectorSub( foreColor , pixelColor ) ) / sqrDFi ) ,
+									wBi = Math.exp( - Math.vectorSqrLength( Math.vectorSub( backColor , pixelColor ) ) / sqrDBi ) ;
+								var f = Math.exp( - ratio * ratio * wFi * wBi / _self.sqrTheata ) ;
+								if ( isNaN( bestConf ) || f < bestConf ) {
+									bestConf = f ;
 									bestAlpha = estimateAlpha ;
 								}
 							}
-						// console.log( pixelColor , "   " , bestRatio , bestAlpha ) ;
 						if ( bestAlpha < 0.5 ) {
 							_self.ctx.fillStyle = "#FF0000" ;
 							_self.ctx.fillRect( j , i , 1 , 1 ) ;
@@ -216,6 +235,7 @@ Scissor.prototype = {
 				}
 
 			/* Matting Code */
+			/* Just using estimate alpha to solve matting */
 
 		} ;
 
@@ -229,5 +249,42 @@ Scissor.prototype = {
 			_self.canvas.removeEventListener( "mousemove" , mousemoveHandle ) ;
 			_self.canvas.removeEventListener( "mouseup" , mouseupHandle ) ;
 		} ;
+	} ,
+
+	/* scissor.finish() - Finish matting */
+	finish: function() {
+		var _self = this ;
+
+		var que = [] , inQueue = [] ;
+		for ( var i = 0 ; i < _self.width * _self.height ; i ++ )
+			inQueue.push( false ) ;
+		que.push( [ 0 , 0 ] ) ;
+		inQueue[ 0 ] = true ;
+		// BFS for clear all non-matte pixel
+		while ( que.length > 0 ) {
+			var pt = que.shift() ;
+			var x = pt[ 0 ] , y = pt[ 1 ] ;
+			_self.imageData.data[ ( y * _self.width + x ) * 4 + 3 ] = 0 ;
+			for ( var dx = -1 ; dx <= 1 ; dx ++ )
+				for ( var dy = -1 ; dy <= 1 ; dy ++ ) {
+					var xx = x + dx , yy = y + dy ;
+					if ( xx < 0 || yy < 0 || xx >= _self.width || yy >= _self.height ) continue ;
+					var offset = yy * _self.width + xx ;
+					if ( inQueue[ offset ] || _self.isMatte[ offset ] ) continue ;
+					que.push( [ xx , yy ] ) ;
+					inQueue[ offset ] = true ;
+				}
+		}
+
+		// clear all matte pixel
+		for ( var y = 0 ; y < _self.height ; y ++ )
+			for ( var x = 0 ; x < _self.width ; x ++ ) {
+				var offset = y * _self.width + x ;
+				if ( _self.isMatte[ offset ] && _self.alpha[ offset ] <= 0.5 )
+					_self.imageData.data[ offset * 4 + 3 ] = 0 ;
+			}
+
+		// put image into canvas
+		_self.ctx.putImageData( _self.imageData , 0 , 0 ) ;
 	}
 } ;
