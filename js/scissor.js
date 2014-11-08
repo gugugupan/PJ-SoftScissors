@@ -125,7 +125,12 @@ Scissor.prototype = {
 			var deltaX = x - lx , deltaY = y - ly ;
 			var unitDeltaX = deltaX / Math.sqrt( deltaX * deltaX + deltaY * deltaY ) ,
 				unitDeltaY = deltaY / Math.sqrt( deltaX * deltaX + deltaY * deltaY ) ;
+			// var leftCluster = new Cluster( _self.leftBoudary , 5 ) ,
+				// rightCluster = new Cluster( _self.rightBoudary , 5 ) ;
+			var boudaryPointCount = 0 ;
 			for ( var xx = lx , yy = ly ; Math.sgn( x - xx ) == Math.sgn( x - lx ) && Math.sgn( y - yy ) == Math.sgn( y - ly ) ; xx += unitDeltaX * 2 , yy += unitDeltaY * 2 ) {
+				boudaryPointCount ++ ;
+
 				// // Draw a line 
 				// _self.ctx.fillStyle = "#FF0000" ;
 				// _self.ctx.fillRect( xx , yy , 1 , 1 ) ;
@@ -142,9 +147,13 @@ Scissor.prototype = {
 				color.push( _self.imageData.data[ offset + 0 ] ) ;
 				color.push( _self.imageData.data[ offset + 1 ] ) ;
 				color.push( _self.imageData.data[ offset + 2 ] ) ;
-				_self.leftBoudary.push( color ) ;
-				if ( _self.leftBoudary.length > _self.maxBoudaryArrSize )
-					_self.leftBoudary.shift() ;
+				// var left2left = leftCluster.getNearestCenterDist( color ) ,
+					// left2right = rightCluster.getNearestCenterDist( color ) ;
+				// if ( left2left > left2right / 2 ) {
+					_self.leftBoudary.push( color ) ;
+					if ( _self.leftBoudary.length > _self.maxBoudaryArrSize )
+						_self.leftBoudary.shift() ;
+				// }
 				// // Draw a line 
 				// _self.ctx.fillStyle = "#FFFF00" ;
 				// _self.ctx.fillRect( leftBasePointX , leftBasePointY , 1 , 1 ) ;
@@ -160,9 +169,14 @@ Scissor.prototype = {
 				color.push( _self.imageData.data[ offset + 0 ] ) ;
 				color.push( _self.imageData.data[ offset + 1 ] ) ;
 				color.push( _self.imageData.data[ offset + 2 ] ) ;
-				_self.rightBoudary.push( color ) ;
-				if ( _self.rightBoudary.length > _self.maxBoudaryArrSize )
-					_self.rightBoudary.shift() ;
+				// var right2left = leftCluster.getNearestCenterDist( color ) ,
+					// right2right = rightCluster.getNearestCenterDist( color ) ;
+				// if ( right2right > right2left / 2 ) {
+					_self.rightBoudary.push( color ) ;
+					if ( _self.rightBoudary.length > _self.maxBoudaryArrSize )
+						_self.rightBoudary.shift() ;
+				// }
+
 				// // Draw a line 
 				// _self.ctx.fillStyle = "#0000FF" ;
 				// _self.ctx.fillRect( rightBasePointX , rightBasePointY , 1 , 1 ) ;

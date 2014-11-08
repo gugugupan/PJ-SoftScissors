@@ -46,3 +46,8 @@ Math.vectorLength = function( v ) {
 		c += v[ i ] * v[ i ] ;
 	return Math.sqrt( c ) ;
 } ;
+
+/* Math.vectorDist(a,b) : return dist of two vector a and b */
+Math.vectorDist = function( a , b ) {
+	return Math.vectorLength( Math.vectorSub( a , b ) ) ;
+} ;
