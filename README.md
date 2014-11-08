@@ -9,6 +9,8 @@ Jue Wang, Maneesh Agrawala, Michael Cohen.
 Demo
 ============
 
+see http://gugugupan.github.io/SoftScissors
+
 Usage
 ============
 
