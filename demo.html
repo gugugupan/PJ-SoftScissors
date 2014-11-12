@@ -1,0 +1,25 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv=Content-Type content="text/html;charset=utf-8">
+		<title>Demo of Soft Scissors</title>
+		<style type="text/css">
+			body {
+				margin: 20px 0 0 20px;
+				padding: 0;
+				background-image: url( "image/alpha.png" );
+			}
+		</style>
+		<script type="text/javascript" src="js/scissor.js"></script>
+		<script type="text/javascript" src="js/math.js"></script>
+		<script type="text/javascript" src="js/cluster.js"></script>
+	</head>
+	<body>
+		<canvas id="myCanvas"></canvas>
+
+		<script type="text/javascript">
+			var scissor = new Scissor( "myCanvas" ) ;
+			scissor.start( "image/dog.jpg" ) ;
+		</script>
+	</body>
+</html>
