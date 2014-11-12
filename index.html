@@ -8,11 +8,20 @@
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
     <script src="javascripts/main.js"></script>
+    <script src="javascripts/sscissor-0.0.1.min.js"></script>
+    <script src="javascripts/jquery-1.11.0.min.js"></script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 
+    <style type="text/css">
+      #canvasContainer {
+        border: 5px solid #777;
+        margin-bottom: 20px;
+        display: block;
+        background-image: url( "images/alpha.png" );
+      }
+    </style>
   </head>
   <body>
 
@@ -24,14 +33,24 @@
     <div class="wrapper">
       <nav>
         <ul>
-          <li>Demo</li>
-          <li>Usage</li>
-          <li>Reference</li>
+          <li><a href="#mattingDemo">Demo</a></li>
+          <li><a>Usage</a></li>
+          <li><a>Reference</a></li>
         </ul>
       </nav>
       <section>
-<p></p>
-        <!--
+<p id="mattingDemo">Demo works on this step:</p>
+<ol>
+  <li>Press START BUTTON to loading an image;</li>
+  <li>Move your mouse into matting image;</li>
+  <li>Press and hold your mouse on object boudary and clockwise drag your mouse;</li>
+  <li>Press FINISH BUTTON to show your matting result.</li>
+</ol>
+<div id="canvasContainer">
+  <canvas width=600 height=400></canvas>
+</div>
+
+        
 <h3><a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
 
 <p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
@@ -62,7 +81,7 @@ $ git checkout gh-pages
 <a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
 
 <p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
--->
+
       </section>
       <footer>
         <p>Project maintained by <a href="https://github.com/gugugupan">gugugupan</a></p>
