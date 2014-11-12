@@ -1,3 +1,147 @@
+/* --- cluster.js --- */
+
+/* Cluster Contructed Function
+	Params:
+		feature : list of feature array
+		k : num of cluster
+*/
+var Cluster = function( feature , k ) {
+	var _self = this ;
+
+	/* initialize center point */
+	var n = feature.length ;
+	var dimension = 3 ; // MAGIC NUMBER!
+	if ( k > n ) k = n ;
+	_self.k = k ;
+	_self.dimension = dimension ;
+	_self.center = [] ;
+	for ( var i = 0 ; i < k ; i ++ ) {
+		var center_vector = [] ;
+		for ( var d = 0 ; d < dimension ; d ++ )
+			center_vector.push( Math.random() * 255 ) ; // center point initialize by random, MAGIC NUMBER!
+		_self.center.push( center_vector ) ;
+	}
+
+	/* initialize for some varible */
+	var belongsTo = [] ;
+	var numCluster = [] ;
+	for ( var i = 0 ; i < n ; i ++ ) belongsTo.push( 0 ) ;
+	for ( var i = 0 ; i < k ; i ++ ) numCluster.push( 0 ) ;
+
+	/* iteration for ITER num */
+	for ( var ITER = 0 ; ITER < 5 ; ITER ++ ) {
+		for ( var i = 0 ; i < k ; i ++ )
+			numCluster[ i ] = 0 ;
+
+		var sumDist = 0 ;
+		for ( var i = 0 ; i < n ; i ++ ) { // Find nearest center
+			belongsTo[ i ] = _self.getNearestCenter( feature[ i ] ) ;
+			numCluster[ belongsTo[ i ] ] ++ ;
+			// sumDist += Math.vectorDist( feature[ i ] , _self.center[ belongsTo[ i ] ] ) ;
+		}
+		// console.log( belongsTo ) ;
+		// console.log( sumDist ) ;
+
+		for ( var i = 0 ; i < k ; i ++ ) // Calc new center
+			if ( numCluster[ i ] <= 1 )
+				_self.center[ i ] = feature[ parseInt( n * Math.random() , 10 ) ] ;
+			else {
+				_self.center[ i ] = [ 0 , 0 , 0 ] ; // MAGIC NUMBER!
+				for ( var j = 0 ; j < n ; j ++ )
+					if ( belongsTo[ j ] == i ) 
+						for ( var d = 0 ; d < dimension ; d ++ )
+							_self.center[ i ] [ d ] += feature[ j ] [ d ] ;
+				for ( var d = 0 ; d < dimension ; d ++ )
+					_self.center[ i ] [ d ] /= numCluster[ i ] ;
+			}
+	}
+} ;
+
+Cluster.prototype = {
+	/* cluster.getProb( feature ) */
+	getNearestCenterDist: function( feature ) {
+		var _self = this ;
+		if ( _self.k == 0 ) return 1 ;
+		var belongsTo = _self.getNearestCenter( feature ) ;
+		return Math.vectorDist( feature , _self.center[ belongsTo ] ) ;
+	} ,
+
+	/* cluster.add( feature ) - Add feature into dataset */
+	add: function( feature_list ) {
+		return null ;
+	} ,
+
+	/* cluster.getNearestCenter( feature ) - get nearest center of feature */
+	getNearestCenter: function( feature ) {
+		var _self = this ;
+		if ( _self.k == 0 ) return NaN ;
+		var belongsTo = 0 ;
+		var minDist = Math.vectorDist( feature , _self.center[ 0 ] ) ;
+		for ( var j = 1 ; j < _self.k ; j ++ ) {
+			var dist = Math.vectorDist( feature , _self.center[ j ] ) ;
+			if ( dist < minDist ) {
+				minDist = dist ;
+				belongsTo = j ;
+			}
+		}
+		return belongsTo ;
+	}
+} ;
+
+/* --- math.js --- */
+
+Math.pointDistToLine = function( x, y, x1, y1, x2, y2 ) {
+	var cross = (x2 - x1) * (x - x1) + (y2 - y1) * (y - y1) ;
+	if (cross <= 0) return Math.sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1)) ;
+	var d2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) ;
+	if (cross >= d2) return Math.sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2)) ;
+	var r = cross / d2 ;
+	var px = x1 + (x2 - x1) * r ;
+	var py = y1 + (y2 - y1) * r ;
+	return Math.sqrt((x - px) * (x - px) + (py - y1) * (py - y1)) ;
+} ;
+
+Math.sgn = function( x ) {
+	if ( x < 0 ) return -1 ;
+	return 1 ;
+} ;
+
+/* Math.vectorSub(a,b) : vector a - vector b*/
+Math.vectorSub = function( a , b ) {
+	var c = [] ;
+	for ( var i = 0 ; i < a.length ; i ++ )
+		c.push( a[ i ] - b[ i ] ) ;
+	return c ;
+} ;
+
+/* Math.vectorDotProduct(a,b) : dot product of vector a and b */
+Math.vectorDotProduct = function( a , b ) {
+	var c = 0 ;
+	for ( var i = 0 ; i < a.length ; i ++ )
+		c += a[ i ] * b[ i ] ;
+	return c ;
+} ;
+
+/* Math.vectorSqrLength(v) : return length * length of vector */
+Math.vectorSqrLength = function( v ) {
+	var c = 0;
+	for ( var i = 0 ; i < v.length ; i ++ )
+		c += v[ i ] * v[ i ] ;
+	return c ;
+} ;
+
+Math.vectorLength = function( v ) {
+	var c = 0 ;
+	for ( var i = 0 ; i < v.length ; i ++ )
+		c += v[ i ] * v[ i ] ;
+	return Math.sqrt( c ) ;
+} ;
+
+/* Math.vectorDist(a,b) : return dist of two vector a and b */
+Math.vectorDist = function( a , b ) {
+	return Math.vectorLength( Math.vectorSub( a , b ) ) ;
+} ;
+
 /* --- scissor.js --- */
 
 /* Scissor Constructed Function
