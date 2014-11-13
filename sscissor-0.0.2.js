@@ -155,6 +155,7 @@ var Scissor = function( canvas_id ) {
 	/* image size */
 	this.width = null ;
 	this.height = null ;
+	this.offset = null ;
 
 	/* 2d context of canvas */
 	this.ctx = null ;
@@ -221,12 +222,41 @@ Scissor.prototype = {
 			}
 		} ;
 
+		var getOffset = function( dom ) {
+			var e = dom ;
+			var offset = {x:0,y:0};
+			while (e)
+			{
+				offset.x += e.offsetLeft;
+				offset.y += e.offsetTop;
+				e = e.offsetParent;
+			}
+
+			if (document.documentElement && (document.documentElement.scrollTop || document.documentElement.scrollLeft))
+			{
+				offset.x -= document.documentElement.scrollLeft;
+				offset.y -= document.documentElement.scrollTop;
+			}
+			else if (document.body && (document.body.scrollTop || document.body.scrollLeft))
+			{
+				offset.x -= document.body.scrollLeft;
+				offset.y -= document.body.scrollTop;
+			}
+			else if (window.pageXOffset || window.pageYOffset)
+			{
+				offset.x -= window.pageXOffset;
+				offset.y -= window.pageYOffset;
+			}
+			return offset ;
+		} ;
+
 		/* mousedownHandle() - Handle of mousedown event */
 		var mousedownHandle = function( evt ) {
 			evt.preventDefault();
 
-			var x = evt.clientX - _self.canvas.offsetLeft ;
-			var y = evt.clientY - _self.canvas.offsetTop ;
+			_self.offset = getOffset( _self.canvas ) ;
+			var x = evt.clientX - _self.offset.x ;
+			var y = evt.clientY - _self.offset.y ;
 
 			_self.lastX = x ;
 			_self.lastY = y ;
@@ -250,8 +280,8 @@ Scissor.prototype = {
 		var mousemoveHandle = function( evt ) {
 			evt.preventDefault() ;
 
-			var x = evt.clientX - _self.canvas.offsetLeft ;
-			var y = evt.clientY - _self.canvas.offsetTop ;
+			var x = evt.clientX - _self.offset.x ;
+			var y = evt.clientY - _self.offset.y ;
 			var lx = _self.lastX ;
 			var ly = _self.lastY ;
 			if ( x == lx && y == ly ) return ;
@@ -412,6 +442,12 @@ Scissor.prototype = {
 	/* scissor.finish() - Finish matting */
 	finish: function() {
 		var _self = this ;
+
+		// clear event listener
+		var canvasDomClone = _self.canvas.cloneNode( true ) ;
+		_self.canvas.parentNode.replaceChild( canvasDomClone , _self.canvas ) ;
+		_self.canvas = canvasDomClone ;
+		_self.ctx = _self.canvas.getContext( "2d" ) ;
 
 		var que = [] , inQueue = [] ;
 		for ( var i = 0 ; i < _self.width * _self.height ; i ++ )
